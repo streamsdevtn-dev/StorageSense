@@ -24,13 +24,42 @@ load_css()
 # DB connection logic (Secure fallback)
 try:
     # Attempt to load Supabase / Production PostgreSQL from Streamlit Secrets
-    # Requires a Read-Only PostgreSQL connection string in production
     DB_URI = st.secrets["SUPABASE_DATABASE_URI"]
     IS_SQLITE = False
 except (Exception, KeyError):
     # Fallback to local SQLite for desktop prototyping
     DB_URI = os.path.join(os.path.dirname(__file__), "..", "db", "storagesense.db")
     IS_SQLITE = True
+
+# --- Auto-Initialize Minimal Map Data for Cloud Deployments ---
+def ensure_fallback_db():
+    if IS_SQLITE and not os.path.exists(DB_URI):
+        try:
+            with sqlite3.connect(DB_URI) as conn:
+                schema_path = os.path.join(os.path.dirname(__file__), "..", "db", "schema.sql")
+                if os.path.exists(schema_path):
+                    with open(schema_path) as f:
+                        conn.executescript(f.read())
+                
+                # Insert mock data so the map is never completely blank when deployed without a production database
+                mock_zips = [
+                    ("78701", "48453", "TX", "Austin", 30.270, -97.741),
+                    ("33139", "12086", "FL", "Miami", 25.790, -80.140),
+                    ("80202", "08031", "CO", "Denver", 39.754, -104.998),
+                    ("60601", "17031", "IL", "Chicago", 41.885, -87.622),
+                    ("97204", "41051", "OR", "Portland", 45.518, -122.678)
+                ]
+                import random
+                for z, fips, st, city, lat, lon in mock_zips:
+                    conn.execute("INSERT OR IGNORE INTO geography (zip_code, county_fips, state_abbr, city, lat, lon) VALUES (?, ?, ?, ?, ?, ?)", (z, fips, st, city, lat, lon))
+                    conn.execute("INSERT OR REPLACE INTO local_building_permits (zip_code, permit_date, units, type) VALUES (?, DATE('now'), ?, 'Multifamily')", (z, random.randint(5, 50)))
+                    conn.execute("INSERT OR REPLACE INTO behavioral_signals (zip_code, date, usps_net_migration, google_search_index, fema_disaster_active) VALUES (?, DATE('now'), 0, 0, ?)", (z, random.choice([0, 1])))
+                    conn.execute("INSERT OR REPLACE INTO demand_scores (zip_code, liquidity_score_l, movement_score_m, structural_score_s, competition_score_c, final_score) VALUES (?, 0.5, 1.0, 0.5, 0.5, ?)", (z, random.random()))
+        except Exception as e:
+            st.error(f"Fallback database initialization error: {e}")
+
+if IS_SQLITE:
+    ensure_fallback_db()
 
 @st.cache_data
 def load_map_data(timeline_offset_months=0):

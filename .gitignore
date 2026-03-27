@@ -14,9 +14,8 @@ __pycache__/
 dist/
 build/
 
-# Database Data (Do not commit SQLite binary prototyping)
-*.db
-*.sqlite3
+# Database Data
+# Removed sqlite ignores to push a static snapshot to Streamlit
 
 # OS generated files
 .DS_Store
