@@ -1,0 +1,31 @@
+name: Agent C (Structural Anchor) - Monthly Run
+
+on:
+  schedule:
+    # Runs at midnight on the 1st of every month
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  run-agent-c:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+      
+    - name: Run Agent C (Structural Friction)
+      env:
+        SUPABASE_DATABASE_URI: ${{ secrets.SUPABASE_DATABASE_URI }}
+        PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+        PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+      run: |
+        python agents/agent_c_structural.py

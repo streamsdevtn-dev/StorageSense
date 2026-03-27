@@ -1,0 +1,32 @@
+name: Agent A (Housing Macro) - Weekly Run
+
+on:
+  schedule:
+    # Runs at 17:00 (5 PM) on Fridays
+    - cron: '0 17 * * 5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  run-agent-a:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+      
+    - name: Run Agent A (Prefect Flow)
+      env:
+        FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        SUPABASE_DATABASE_URI: ${{ secrets.SUPABASE_DATABASE_URI }}
+        PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+        PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+      run: |
+        python agents/agent_a_housing.py

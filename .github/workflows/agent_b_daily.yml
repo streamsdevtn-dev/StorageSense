@@ -1,0 +1,31 @@
+name: Agent B (Behavioral Pulse) - Daily Run
+
+on:
+  schedule:
+    # Runs at 6:00 AM daily to catch immediate catalysts overnight
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-agent-b:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+        
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+      
+    - name: Run Agent B (Flash Catalysts)
+      env:
+        SUPABASE_DATABASE_URI: ${{ secrets.SUPABASE_DATABASE_URI }}
+        PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+        PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+      run: |
+        python agents/agent_b_behavioral.py
